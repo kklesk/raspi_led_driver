@@ -19,7 +19,7 @@ static struct file_op{
 }
 
 static int __init init_led(void){
-
+//TODO
 
 }
 
@@ -34,3 +34,4 @@ static void __exit close_led(void){
 module_init( init_led );
 module_exit( close_led );
 MODULE_LICENCE("GPL");
+MODULE_AUTORH("klesk");
