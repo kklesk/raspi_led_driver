@@ -34,4 +34,4 @@ static void __exit close_led(void){
 module_init( init_led );
 module_exit( close_led );
 MODULE_LICENCE("GPL");
-MODULE_AUTORH("klesk");
+MODULE_AUTOR("klesk");
