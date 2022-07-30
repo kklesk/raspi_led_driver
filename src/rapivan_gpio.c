@@ -17,9 +17,9 @@ static struct device* led_dev;
 static int open_led(struct inode* device_file, struct file* instance) {
     return 0;
 }
-static int read_led(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-    return 0;
-}
+// static int read_led(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
+//     return 0;
+// }
 // static int write_led(struct inode* device_file, struct file* instance) {
 //     return 0;
 // }
@@ -30,12 +30,12 @@ static int close_led(struct inode* device_file, struct file* instance) {
 static struct file_operations file_ops = {
     .owner = THIS_MODULE,
     .open = open_led,
-    .read = read_led,
-   // .write= write_led,
+    // .read = read_led,
+    // .write= write_led,
     .release = close_led,
-}
+};
 
-static int __init init_led(void){
+static int init_led(void){
 //TODO
     printk("init_led(): Hello Korld");
     //register char device number(s)
@@ -49,10 +49,10 @@ static int __init init_led(void){
         goto free_device_number;
     //unload protection
     driver_object->owner = THIS_MODULE;
-    driver_object->ops = file_ops;
+    driver_object->ops = &file_ops;
     //register cdev driver object
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-add.html
-    if(cdev_add(driver_object,led_dev_number,MODULENAME,1))
+    if(cdev_add(driver_object,led_dev_number,MODULENAME))
         goto free_cdev;
     //write entry sysfs for /dev/ entry
     //udev deamon will automatically load file into /dev/
@@ -69,10 +69,10 @@ static int __init init_led(void){
     free_cdev:
         //decrement refcount ( if refcount == 0 then kobject_cleanup)
         //https://linuxtv.org/downloads/v4l-dvb-internals/device-drivers/API-kobject-put.html
-        kobject_put(driver_object->kobj);
+        kobject_put(&driver_object->kobj);
 }
 
-static void __exit close_led(void){
+static void close_led(void){
 
     //delete sysfs entry in /dev/
     //https://docs.huihoo.com/doxygen/linux/kernel/3.7/base_2class_8c.html#ab65ab0ad8a63fb884c83f4eaee8874bc
@@ -84,7 +84,10 @@ static void __exit close_led(void){
 }
 
 
-module_exit( close_led );
-module_init( init_led );
+do_initcalls( init_led );
+cleanup_module( close_led );
+//https://www.kernel.org/doc/html/v5.0/driver-api/basics.html
+// module_init(init_led);
+// module_exit(close_led);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR( DRIVER_AUTHOR);
