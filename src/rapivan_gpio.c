@@ -14,17 +14,24 @@ static struct class *led_class;
 static struct device* led_dev;
 
 
-static int read_led(void) {
-
+static int open_led(struct inode* device_file, struct file* instance) {
+    return 0;
 }
-static int open_led(void) {
-
+static int read_led(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
+    return 0;
+}
+// static int write_led(struct inode* device_file, struct file* instance) {
+//     return 0;
+// }
+static int close_led(struct inode* device_file, struct file* instance) {
+    return 0;
 }
 
 static struct file_operations file_ops = {
     .owner = THIS_MODULE,
     .open = open_led,
     .read = read_led,
+   // .write= write_led,
     .release = close_led,
 }
 
