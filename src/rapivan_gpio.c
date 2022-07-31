@@ -35,8 +35,7 @@ static struct file_operations file_ops = {
     .release = close_led,
 };
 
-static int init_led(void){
-//TODO
+static int __init init_led(void){
     printk("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
@@ -52,15 +51,13 @@ static int init_led(void){
     driver_object->ops = &file_ops;
     //register cdev driver object
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-add.html
-    if(cdev_add(driver_object,led_dev_number,MODULENAME))
+    if(cdev_add(driver_object,led_dev_number,1))
         goto free_cdev;
     //write entry sysfs for /dev/ entry
     //udev deamon will automatically load file into /dev/
     led_class = class_create(THIS_MODULE,MODULENAME);
     device_create(led_class,NULL,led_dev_number,NULL,"%s",MODULENAME);
-   
-    return 0;
-     
+
     free_device_number:
         //unregister device number
         //https://www.kernel.org/doc/htmldocs/kernel-api/API-unregister-chrdev-region.html
@@ -70,9 +67,12 @@ static int init_led(void){
         //decrement refcount ( if refcount == 0 then kobject_cleanup)
         //https://linuxtv.org/downloads/v4l-dvb-internals/device-drivers/API-kobject-put.html
         kobject_put(&driver_object->kobj);
+
+
+    return 0;
 }
 
-static void close_led(void){
+static void __exit exit_led(void){
 
     //delete sysfs entry in /dev/
     //https://docs.huihoo.com/doxygen/linux/kernel/3.7/base_2class_8c.html#ab65ab0ad8a63fb884c83f4eaee8874bc
@@ -84,10 +84,10 @@ static void close_led(void){
 }
 
 
-do_initcalls( init_led );
-cleanup_module( close_led );
+// do_initcalls( init_led );
+//cleanup_module( exit_led );
 //https://www.kernel.org/doc/html/v5.0/driver-api/basics.html
-// module_init(init_led);
-// module_exit(close_led);
+module_init(init_led);
+module_exit(exit_led);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR( DRIVER_AUTHOR);
