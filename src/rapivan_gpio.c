@@ -35,13 +35,14 @@ static int open_gpio(struct inode* device_file, struct file* instance) {
 }
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
     printk("read_led(): drv open");
-//TODO Read GPIO PIN STATUS
+    //TODO Read GPIO PIN STATUS
     // unsigned long to_copy, not_copied;
     // to_copy=min(count)
     return 0;
 }
 static int write_gpio(struct inode* device_file, struct file* instance) {
     printk("write_led(): drv open");
+
     //TODO Write to GPIOPIN
 
     return 0;
@@ -61,7 +62,7 @@ static struct file_operations file_ops = {
     .owner = THIS_MODULE,
     .open = open_gpio,
     .read = read_gpio,
-    .write= write_gpio,
+    // .write= write_gpio,
     .release = close_gpio,
 };
 
