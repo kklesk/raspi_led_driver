@@ -8,3 +8,8 @@ PWD  := $(shell pwd)
 default:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 endif
+
+clean:
+	 rm ./*.o *.ko *mod.c *symvers *.order *.mod
+
+

@@ -4,9 +4,9 @@
 #include <linux/init.h>
 #include <linux/device.h>
 
-#define DRIVER_AUTHOR "kleskk"
+#define DRIVER_AUTHOR "klesk"
 
-#define MODULENAME "RASPILED"
+#define DRV_NAME "RASPILED"
 
 static dev_t led_dev_number;
 static struct cdev* driver_object;
@@ -14,32 +14,34 @@ static struct class *led_class;
 static struct device* led_dev;
 
 
-static int open_led(struct inode* device_file, struct file* instance) {
-    return 0;
-}
+// static int open_led(struct inode* device_file, struct file* instance) {
+//     printk("open_led(): drv open");
+//     return 0;
+// }
 // static int read_led(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
 //     return 0;
 // }
 // static int write_led(struct inode* device_file, struct file* instance) {
 //     return 0;
 // }
-static int close_led(struct inode* device_file, struct file* instance) {
-    return 0;
-}
+// static int close_led(struct inode* device_file, struct file* instance) {
+//         printk("close_led(): drv close");
+//     return 0;
+// }
 
 static struct file_operations file_ops = {
     .owner = THIS_MODULE,
-    .open = open_led,
+    // .open = open_led,
     // .read = read_led,
     // .write= write_led,
-    .release = close_led,
+    // .release = close_led,
 };
 
 static int __init init_led(void){
     printk("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
-    if(alloc_chrdev_region(&led_dev_number,0,1,MODULENAME))
+    if(alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME))
         return -EIO;
     //allocate cdev struct
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html
@@ -55,8 +57,10 @@ static int __init init_led(void){
         goto free_cdev;
     //write entry sysfs for /dev/ entry
     //udev deamon will automatically load file into /dev/
-    led_class = class_create(THIS_MODULE,MODULENAME);
-    device_create(led_class,NULL,led_dev_number,NULL,"%s",MODULENAME);
+    led_class = class_create(THIS_MODULE,"Raspijingle");
+    if(IS_ERR( led_class))
+        goto free_cdev;
+    led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s","raspijingle");
 
     free_device_number:
         //unregister device number
@@ -67,7 +71,6 @@ static int __init init_led(void){
         //decrement refcount ( if refcount == 0 then kobject_cleanup)
         //https://linuxtv.org/downloads/v4l-dvb-internals/device-drivers/API-kobject-put.html
         kobject_put(&driver_object->kobj);
-
 
     return 0;
 }
