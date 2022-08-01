@@ -33,8 +33,19 @@ static int open_gpio(struct inode* device_file, struct file* instance) {
     }
     return 0;
 }
+
+static char test_string[]="Hello World\n";
+
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-    printk("read_led(): drv open");
+    //printk("read_led(): drv open");
+    unsigned long not_copied,to_copy;
+    to_copy=min(count,strlen(test_string)+1);
+    not_copied=copy_to_user(userbuffer,test_string,to_copy);
+    return to_copy-not_copied;
+
+
+    dev_info(led_dev,"driver open called");
+
     //TODO Read GPIO PIN STATUS
     // unsigned long to_copy, not_copied;
     // to_copy=min(count)
