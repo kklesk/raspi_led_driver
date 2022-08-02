@@ -19,77 +19,90 @@ static struct cdev* driver_object;
 static struct class *led_class;
 static struct device* led_dev;
 
-static atomic_t access_count = ATOMIC_INIT(-1);
+// static atomic_t access_count = ATOMIC_INIT(-1);
 
-static int open_gpio(struct inode* device_file, struct file* instance) {
-    printk("open_led(): drv open");
-
-    if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-        if(atomic_inc_and_test(&access_count))
-            return 0;
+// static int open_gpio(struct inode* device_file, struct file* instance) {
+//     printk("open_led(): drv open");
+//     dev_info(led_dev,"%s","open_gpio() called\n");
+//     if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+//         if(atomic_inc_and_test(&access_count))
+//             return 0;
     
-        atomic_dec(&access_count);
-        return -EBUSY;
-    }
-    return 0;
-}
-static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-    printk("read_led(): drv open");
-    //TODO Read GPIO PIN STATUS
-    // unsigned long to_copy, not_copied;
-    // to_copy=min(count)
-    return 0;
-}
-static int write_gpio(struct inode* device_file, struct file* instance) {
-    printk("write_led(): drv open");
+//         atomic_dec(&access_count);
+//         return -EBUSY;
+//     }
+//     return 0;
+// }
 
-    //TODO Write to GPIOPIN
+// static char test_string[]="Hello World\n";
 
-    return 0;
-}
-static int close_gpio(struct inode* device_file, struct file* instance) {
-    printk("close_led(): drv close");
-    
-    if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-        return 0;
-    }
-    atomic_dec(&access_count);
+// static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
+//     printk("read_led(): drv open");
+//     dev_info(led_dev,"%s","read_gpio() called\n");
 
-    return 0;
-}
+//     unsigned long not_copied,to_copy;
+//     to_copy=min(count,strlen(test_string)+1);
+//     not_copied=copy_to_user(userbuffer,test_string,to_copy);
+//     return to_copy-not_copied;
+//     dev_info(led_dev,"driver open called");
+
+//     TODO Read GPIO PIN STATUS
+//     unsigned long to_copy, not_copied;
+//     to_copy=min(count)
+// }
+// static int write_gpio(struct inode* device_file, struct file* instance) {
+//     printk("write_led(): drv open");
+
+//     //TODO Write to GPIOPIN
+
+//     return 0;
+// }
+// static int close_gpio(struct inode* device_file, struct file* instance) {
+//     printk("close_led(): drv close");
+//     dev_info(led_dev,"%s","close_gpio() called\n");
+
+//     if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+//         return 0;
+//     }
+//     atomic_dec(&access_count);
+
+//     return 0;
+//}
 
 static struct file_operations file_ops = {
     .owner = THIS_MODULE,
-    .open = open_gpio,
-    .read = read_gpio,
-    // .write= write_gpio,
-    .release = close_gpio,
+    // .open = open_gpio,
+    // .read = read_gpio,
+    // // .write= write_gpio,
+    // .release = close_gpio,
 };
 
 static int __init init_led(void){
     printk("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
-    if(alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME))
+    if(alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME)<0)
         return -EIO;
     //allocate cdev struct
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html
     driver_object = cdev_alloc();
     if(driver_object == NULL)
         goto free_device_number;
-    //unload protection
+    //activate unload protection
+    //TODO Maybe similar to the next two linese
+    // --> cdev_init(driver_object,&file_ops);
     driver_object->owner = THIS_MODULE;
     driver_object->ops = &file_ops;
     //register cdev driver object
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-add.html
-    if(cdev_add(driver_object,led_dev_number,1))
+    if(cdev_add(driver_object,led_dev_number,1)<0)
         goto free_cdev;
     //write entry sysfs for /dev/ entry
     //udev deamon will automatically load file into /dev/
     led_class = class_create(THIS_MODULE,DRV_NAME);
-    if(IS_ERR( led_class))
+    if( IS_ERR(led_class) )
         goto free_cdev;
-    led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s","raspijingle");
+    led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s","raspiled");
 
     free_device_number:
         //unregister device number
