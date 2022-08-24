@@ -1,19 +1,25 @@
 #include <linux/module.h>
 #include <linux/cdev.h>
+// for file_operations struct
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/atomic.h>
 #include <asm/uaccess.h>
+//for ioremap
+#include <asm/io.h>
 
 #define DRIVER_AUTHOR "klesk"
 #define DRV_NAME "RASPILED"
 
-#define GPIO_17 0x7E200014
+#define GPIO_17_ADDRESS 0x7E200014
 // #define GPIO_17_SIZE 0x0000004
 #define GPIO_17_SIZE 4
+//#define GPIO_17 0
 #define LED_ON 1
 #define LED_OFF 0
+
+u32 GPIO_17 = 0;
 
 static dev_t led_dev_number;
 static struct cdev* driver_object;
@@ -41,7 +47,7 @@ static int open_gpio(struct inode* device_file, struct file* instance) {
 //     // to_copy = min(count, strlen(hello_from_read)+1);
 //     // not_copied=copy_to_user(userbuffer,hello_from_read,to_copy);
 //     to_copy = min(count, GPIO_17_SIZE);
-//     not_copied = copy_to_user(user_buffer,GPIO_17,GPIO_17_SIZE);
+//     not_copied = copy_to_user(user_buffer,GPIO_17_ADDRESS,GPIO_17_SIZE);
 //     return to_copy-not_copied;
 // }
 
@@ -49,10 +55,20 @@ static char test_string[]="Hello World\n";
 
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
     dev_info(led_dev,"%s","read_gpio() called\n");
-    ssize_t not_copied,to_copy;
+    unsigned long not_copied,to_copy;
     to_copy=min(count,strlen(test_string)+1);
     not_copied=copy_to_user(userbuffer,test_string,to_copy);
     return to_copy-not_copied;
+}
+
+static ssize_t set_led(int status ){
+    if(status == 1){
+        writeb(LED_ON,&GPIO_17);
+        return 1;
+    } else{
+        writeb(LED_OFF,&GPIO_17);
+        return 0;
+    }
 }
 
 static ssize_t write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
@@ -62,10 +78,17 @@ static ssize_t write_gpio(struct file* instance, const char __user* user_buffer,
 
     to_copy = min(strlen(user_buffer),max_bytes_to_write);
     not_copied = copy_from_user(kernel_mem,user_buffer,to_copy);
+    if(*kernel_mem == '1'){
+        set_led(1);
+    }
+    else if(*kernel_mem == '0')
+        set_led(0);
+
     //dev_info(led_dev,"driver open called");
     return not_copied;
     //TODO Read GPIO PIN STATUS
 }
+
 
 
 static int close_gpio(struct inode* device_file, struct file* instance) {
@@ -77,7 +100,6 @@ static int close_gpio(struct inode* device_file, struct file* instance) {
     atomic_dec(&access_count);
     return 0;
 }
-
 
 //
 // ssize_t write_drv( struct file* instance, const char* __user userbuffer, 
@@ -93,6 +115,11 @@ static struct file_operations file_ops = {
 };
 
 static int __init init_led(void){
+
+    //TODO add io mem
+    if(request_mem_region(GPIO_17_ADDRESS,GPIO_17_SIZE,DRV_NAME)==NULL)
+        return -EBUSY;
+    GPIO_17 = *(u32*) ioremap( GPIO_17_ADDRESS, GPIO_17_SIZE );
     pr_info("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
