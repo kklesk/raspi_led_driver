@@ -10,7 +10,8 @@
 #define DRV_NAME "RASPILED"
 
 #define GPIO_17 0x7E200014
-#define GPIO_17_SIZE 0x0000004
+// #define GPIO_17_SIZE 0x0000004
+#define GPIO_17_SIZE 4
 #define LED_ON 1
 #define LED_OFF 0
 
@@ -19,70 +20,103 @@ static struct cdev* driver_object;
 static struct class *led_class;
 static struct device* led_dev;
 
-// static atomic_t access_count = ATOMIC_INIT(-1);
+static atomic_t access_count = ATOMIC_INIT(0);
 
-// static int open_gpio(struct inode* device_file, struct file* instance) {
-//     printk("open_led(): drv open");
-//     dev_info(led_dev,"%s","open_gpio() called\n");
-//     if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-//         if(atomic_inc_and_test(&access_count))
-//             return 0;
+
+static int open_gpio(struct inode* device_file, struct file* instance) {
+    pr_info("open_led(): drv open");
+    //dev_info(led_dev,"%s","open_gpio() called\n");
+    // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+    //     if(atomic_inc_and_test(&access_count))
+    //         return 0;
     
-//         atomic_dec(&access_count);
-//         return -EBUSY;
-//     }
-//     return 0;
-// }
+    //     atomic_dec(&access_count);
+    //     return -EBUSY;
+    // }
+    return 0;
+}
 
+static char hello_from_read[] = "Hello from read_gpio()";
+
+static ssize_t read_gpio ( struct file* instance, char __user* user_buffer, size_t count, loff_t* offest ){
+
+    unsigned long to_copy, not_copied;
+    // to_copy = min(count, strlen(hello_from_read)+1);
+    // not_copied=copy_to_user(userbuffer,hello_from_read,to_copy);
+    to_copy = min(count, GPIO_17_SIZE);
+    not_copied = copy_to_user(user_buffer,GPIO_17,GPIO_17_SIZE);
+    return to_copy-not_copied;
+}
 // static char test_string[]="Hello World\n";
 
-// static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-//     printk("read_led(): drv open");
-//     dev_info(led_dev,"%s","read_gpio() called\n");
+static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
+    pr_info("read_led(): drv open");
+    dev_info(led_dev,"%s","read_gpio() called\n");
 
-//     unsigned long not_copied,to_copy;
-//     to_copy=min(count,strlen(test_string)+1);
-//     not_copied=copy_to_user(userbuffer,test_string,to_copy);
-//     return to_copy-not_copied;
-//     dev_info(led_dev,"driver open called");
+    unsigned long not_copied,to_copy;
+    to_copy=min(count,strlen(test_string)+1);
+    not_copied=copy_to_user(userbuffer,test_string,to_copy);
+    return to_copy-not_copied;
+    dev_info(led_dev,"driver open called");
 
-//     TODO Read GPIO PIN STATUS
-//     unsigned long to_copy, not_copied;
-//     to_copy=min(count)
-// }
-// static int write_gpio(struct inode* device_file, struct file* instance) {
-//     printk("write_led(): drv open");
+    TODO Read GPIO PIN STATUS
+    unsigned long to_copy, not_copied;
+    to_copy=min(count)
+}
 
-//     //TODO Write to GPIOPIN
+static int write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
+    pr_info("write_led(): drv open");
+    char kernel_mem[128];
+    size_t to_copy, not_copied;
 
-//     return 0;
-// }
-// static int close_gpio(struct inode* device_file, struct file* instance) {
-//     printk("close_led(): drv close");
-//     dev_info(led_dev,"%s","close_gpio() called\n");
+    to_copy = min(user_buffer,max_bytes_to_write)
+    not_copied = copy_from_user(kernel_mem,user_buffer,to_copy);
 
-//     if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-//         return 0;
-//     }
-//     atomic_dec(&access_count);
+    //TODO Write to GPIOPIN
 
-//     return 0;
-//}
+    return 0;
+}
+
+static ssize_t write_gpio(struct file* instance, const char __user user_buffer, loff_t* offs){
+
+    size_t to_copy, not_copied;
+    
+
+}
+
+static int close_gpio(struct inode* device_file, struct file* instance) {
+    pr_info("close_led(): drv close");
+   // dev_info(led_dev,"%s","close_gpio() called\n");
+
+    if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+        return 0;
+    }
+    atomic_dec(&access_count);
+
+    return 0;
+}
+
+//
+// ssize_t write_drv( struct file* instance, const char* __user userbuffer, 
+//                     size_t buffer_size, loff_t* offs )
+//
 
 static struct file_operations file_ops = {
     .owner = THIS_MODULE,
-    // .open = open_gpio,
-    // .read = read_gpio,
-    // // .write= write_gpio,
-    // .release = close_gpio,
+    .open = open_gpio,
+    .read = read_gpio,
+    .write= write_gpio,
+    .release = close_gpio,
 };
 
 static int __init init_led(void){
-    printk("init_led(): Hello Korld");
+    pr_info("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
+    pr_info("alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME)");
     if(alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME)<0)
         return -EIO;
+    pr_info("Major Nr: %d\nMinor Nr: %d",led_dev_number>>20, led_dev_number && 0xffffff);
     //allocate cdev struct
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html
     driver_object = cdev_alloc();
@@ -100,16 +134,20 @@ static int __init init_led(void){
     //write entry sysfs for /dev/ entry
     //udev deamon will automatically load file into /dev/
     led_class = class_create(THIS_MODULE,DRV_NAME);
-    if( IS_ERR(led_class) )
-        goto free_cdev;
+    // if( IS_ERR(led_class) )
+    //     goto free_cdev;
     led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s","raspiled");
 
+    return 0;
+
     free_device_number:
+        pr_info("free_device_number");  
         //unregister device number
         //https://www.kernel.org/doc/htmldocs/kernel-api/API-unregister-chrdev-region.html
         unregister_chrdev_region(led_dev_number,1);
         return -EIO;
     free_cdev:
+        pr_info("free_cdev");
         //decrement refcount ( if refcount == 0 then kobject_cleanup)
         //https://linuxtv.org/downloads/v4l-dvb-internals/device-drivers/API-kobject-put.html
         kobject_put(&driver_object->kobj);
@@ -121,10 +159,11 @@ static void __exit exit_led(void){
 
     //delete sysfs entry in /dev/
     //https://docs.huihoo.com/doxygen/linux/kernel/3.7/base_2class_8c.html#ab65ab0ad8a63fb884c83f4eaee8874bc
+    device_destroy(led_class,led_dev_number);
     class_destroy(led_class);
     cdev_del(driver_object);
     unregister_chrdev_region(led_dev_number,1);
-    printk("close_led(): byebye");
+    pr_info("close_led(): byebye");
     return;
 }
 
