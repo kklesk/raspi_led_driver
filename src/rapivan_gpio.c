@@ -56,8 +56,16 @@ static char test_string[]="Hello World\n";
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
     dev_info(led_dev,"%s","read_gpio() called\n");
     unsigned long not_copied,to_copy;
-    to_copy=min(count,strlen(test_string)+1);
+
+    unsigned char current_led_value = 0;
+    pr_info("LED17 is %c",current_led_value);
+
+    current_led_value = readb(&GPIO_17);
+    to_copy=min(count,strlen(test_string)+1); 
     not_copied=copy_to_user(userbuffer,test_string,to_copy);
+
+
+
     return to_copy-not_copied;
 }
 
