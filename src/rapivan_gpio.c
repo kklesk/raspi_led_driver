@@ -72,15 +72,17 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
 static ssize_t set_led(int status ){
     if(status == 1){
         writeb(LED_ON,&GPIO_17);
+        pr_info("set_led(): ON");
         return 1;
     } else{
         writeb(LED_OFF,&GPIO_17);
+        pr_info("set_led(): OFF");
         return 0;
     }
 }
 
 static ssize_t write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
-    pr_info("write_led(): drv open");
+    //pr_info("write_led()");
     char kernel_mem[128];
     ssize_t to_copy, not_copied;
 
