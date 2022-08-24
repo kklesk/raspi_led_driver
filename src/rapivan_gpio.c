@@ -69,16 +69,19 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
     return to_copy-not_copied;
 }
 
-static ssize_t set_led(int status ){
+static void set_led(int status ){
     if(status == 1){
-        writeb(LED_ON,&GPIO_17);
         pr_info("set_led(): ON");
-        return 1;
-    } else{
-        writeb(LED_OFF,&GPIO_17);
+        writeb(LED_ON,&GPIO_17);
+       // return 0;
+    } else if ( status == 0){
         pr_info("set_led(): OFF");
-        return 0;
+        writeb(LED_OFF,&GPIO_17);
+
+       // return 0;
     }
+    pr_info("set_led(): unkown");
+       // return -1;
 }
 
 static ssize_t write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
