@@ -58,12 +58,12 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
     unsigned long not_copied,to_copy;
 
     unsigned char current_led_value = 0;
-    pr_info("LED17 is %c",current_led_value);
 
-    current_led_value = readb(&GPIO_17);
+
+    readb(&GPIO_17);
     to_copy=min(count,strlen(test_string)+1); 
-    not_copied=copy_to_user(userbuffer,test_string,to_copy);
-
+    not_copied=copy_to_user(userbuffer,current_led_value,to_copy);
+    pr_info("LED17 is %c",current_led_value);
 
 
     return to_copy-not_copied;
