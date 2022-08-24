@@ -22,10 +22,12 @@ static struct device* led_dev;
 
 static atomic_t access_count = ATOMIC_INIT(0);
 
-
 static int open_gpio(struct inode* device_file, struct file* instance) {
     pr_info("open_led(): drv open");
     //dev_info(led_dev,"%s","open_gpio() called\n");
+static int open_gpio(struct inode* device_file, struct file* instance) {
+    //printk("open_led(): drv open");
+    dev_info(led_dev,"%s","open_gpio() called\n");
     // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
     //     if(atomic_inc_and_test(&access_count))
     //         return 0;
@@ -51,6 +53,10 @@ static ssize_t read_gpio ( struct file* instance, char __user* user_buffer, size
 
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
     pr_info("read_led(): drv open");
+static char test_string[]="Hello World\n";
+
+static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
+    //printk("read_led(): drv open");
     dev_info(led_dev,"%s","read_gpio() called\n");
 
     unsigned long not_copied,to_copy;
@@ -59,7 +65,7 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
     return to_copy-not_copied;
     dev_info(led_dev,"driver open called");
 
-    TODO Read GPIO PIN STATUS
+    //TODO Read GPIO PIN STATUS
     unsigned long to_copy, not_copied;
     to_copy=min(count)
 }
@@ -71,8 +77,16 @@ static int write_gpio(struct file* instance, const char __user* user_buffer, siz
 
     to_copy = min(user_buffer,max_bytes_to_write)
     not_copied = copy_from_user(kernel_mem,user_buffer,to_copy);
+    //dev_info(led_dev,"driver open called");
 
-    //TODO Write to GPIOPIN
+    //TODO Read GPIO PIN STATUS
+    // unsigned long to_copy, not_copied;
+    // to_copy=min(count)
+}
+// static int write_gpio(struct inode* device_file, struct file* instance) {
+//     printk("write_led(): drv open");
+
+//     //TODO Write to GPIOPIN
 
     return 0;
 }
@@ -92,6 +106,16 @@ static int close_gpio(struct inode* device_file, struct file* instance) {
         return 0;
     }
     atomic_dec(&access_count);
+//     return 0;
+// }
+static int close_gpio(struct inode* device_file, struct file* instance) {
+    //printk("close_led(): drv close");
+    dev_info(led_dev,"%s","close_gpio() called\n");
+
+    // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+    //     return 0;
+    // }
+    // atomic_dec(&access_count);
 
     return 0;
 }
@@ -139,6 +163,9 @@ static int __init init_led(void){
     led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s","raspiled");
 
     return 0;
+    if(IS_ERR( led_class))
+        goto free_cdev;
+    led_dev = device_create(led_class,NULL,led_dev_number,NULL,"%s",DRV_NAME);
 
     free_device_number:
         pr_info("free_device_number");  
