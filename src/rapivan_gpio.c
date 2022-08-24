@@ -23,9 +23,6 @@ static struct device* led_dev;
 static atomic_t access_count = ATOMIC_INIT(0);
 
 static int open_gpio(struct inode* device_file, struct file* instance) {
-    pr_info("open_led(): drv open");
-    //dev_info(led_dev,"%s","open_gpio() called\n");
-static int open_gpio(struct inode* device_file, struct file* instance) {
     //printk("open_led(): drv open");
     dev_info(led_dev,"%s","open_gpio() called\n");
     // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
@@ -38,87 +35,49 @@ static int open_gpio(struct inode* device_file, struct file* instance) {
     return 0;
 }
 
-static char hello_from_read[] = "Hello from read_gpio()";
+// static char hello_from_read[] = "Hello from read_gpio()";
+// static ssize_t read_gpio ( struct file* instance, char __user* user_buffer, size_t count, loff_t* offest ){
+//     unsigned long to_copy, not_copied;
+//     // to_copy = min(count, strlen(hello_from_read)+1);
+//     // not_copied=copy_to_user(userbuffer,hello_from_read,to_copy);
+//     to_copy = min(count, GPIO_17_SIZE);
+//     not_copied = copy_to_user(user_buffer,GPIO_17,GPIO_17_SIZE);
+//     return to_copy-not_copied;
+// }
 
-static ssize_t read_gpio ( struct file* instance, char __user* user_buffer, size_t count, loff_t* offest ){
-
-    unsigned long to_copy, not_copied;
-    // to_copy = min(count, strlen(hello_from_read)+1);
-    // not_copied=copy_to_user(userbuffer,hello_from_read,to_copy);
-    to_copy = min(count, GPIO_17_SIZE);
-    not_copied = copy_to_user(user_buffer,GPIO_17,GPIO_17_SIZE);
-    return to_copy-not_copied;
-}
-// static char test_string[]="Hello World\n";
-
-static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-    pr_info("read_led(): drv open");
 static char test_string[]="Hello World\n";
 
 static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t count, loff_t* offset) {
-    //printk("read_led(): drv open");
     dev_info(led_dev,"%s","read_gpio() called\n");
-
-    unsigned long not_copied,to_copy;
+    ssize_t not_copied,to_copy;
     to_copy=min(count,strlen(test_string)+1);
     not_copied=copy_to_user(userbuffer,test_string,to_copy);
     return to_copy-not_copied;
-    dev_info(led_dev,"driver open called");
-
-    //TODO Read GPIO PIN STATUS
-    unsigned long to_copy, not_copied;
-    to_copy=min(count)
 }
 
-static int write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
+static ssize_t write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
     pr_info("write_led(): drv open");
     char kernel_mem[128];
-    size_t to_copy, not_copied;
+    ssize_t to_copy, not_copied;
 
-    to_copy = min(user_buffer,max_bytes_to_write)
+    to_copy = min(strlen(user_buffer),max_bytes_to_write);
     not_copied = copy_from_user(kernel_mem,user_buffer,to_copy);
     //dev_info(led_dev,"driver open called");
-
+    return not_copied;
     //TODO Read GPIO PIN STATUS
-    // unsigned long to_copy, not_copied;
-    // to_copy=min(count)
-}
-// static int write_gpio(struct inode* device_file, struct file* instance) {
-//     printk("write_led(): drv open");
-
-//     //TODO Write to GPIOPIN
-
-    return 0;
 }
 
-static ssize_t write_gpio(struct file* instance, const char __user user_buffer, loff_t* offs){
-
-    size_t to_copy, not_copied;
-    
-
-}
 
 static int close_gpio(struct inode* device_file, struct file* instance) {
     pr_info("close_led(): drv close");
    // dev_info(led_dev,"%s","close_gpio() called\n");
-
     if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
         return 0;
     }
     atomic_dec(&access_count);
-//     return 0;
-// }
-static int close_gpio(struct inode* device_file, struct file* instance) {
-    //printk("close_led(): drv close");
-    dev_info(led_dev,"%s","close_gpio() called\n");
-
-    // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-    //     return 0;
-    // }
-    // atomic_dec(&access_count);
-
     return 0;
 }
+
 
 //
 // ssize_t write_drv( struct file* instance, const char* __user userbuffer, 
