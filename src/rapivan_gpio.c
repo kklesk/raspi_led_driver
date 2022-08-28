@@ -16,8 +16,8 @@
 // #define GPIO_17_SIZE 0x0000004
 #define GPIO_17_SIZE 4
 //#define GPIO_17 0
-#define LED_ON 1
-#define LED_OFF 0
+#define LED_ON 0x1
+#define LED_OFF 0x0
 
 u32 GPIO_17 = 0;
 
@@ -59,7 +59,6 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
 
     unsigned char current_led_value = 0;
 
-
     readb(&GPIO_17);
     to_copy=min(count,strlen(test_string)+1); 
     not_copied=copy_to_user(userbuffer,current_led_value,to_copy);
@@ -72,16 +71,19 @@ static ssize_t read_gpio(struct file* instance, char __user* userbuffer, size_t 
 static void set_led(int status ){
     if(status == 1){
         pr_info("set_led(): ON");
-        writeb(LED_ON,&GPIO_17);
+        // writeb(LED_ON,&GPIO_17);
+         outb_p(LED_ON,GPIO_17_ADDRESS);
        // return 0;
     } else if ( status == 0){
         pr_info("set_led(): OFF");
-        writeb(LED_OFF,&GPIO_17);
+        // writeb(LED_OFF,&GPIO_17);
+        outb_p(LED_OFF,GPIO_17_ADDRESS);
+
 
        // return 0;
-    }
-    pr_info("set_led(): unkown");
-       // return -1;
+    }else{
+        pr_info("set_led(): unkown");
+    }   // return -1;
 }
 
 static ssize_t write_gpio(struct file* instance, const char __user* user_buffer, size_t max_bytes_to_write, loff_t* offest ) {
@@ -129,10 +131,6 @@ static struct file_operations file_ops = {
 
 static int __init init_led(void){
 
-    //TODO add io mem
-    if(request_mem_region(GPIO_17_ADDRESS,GPIO_17_SIZE,DRV_NAME)==NULL)
-        return -EBUSY;
-    GPIO_17 = *(u32*) ioremap( GPIO_17_ADDRESS, GPIO_17_SIZE );
     pr_info("init_led(): Hello Korld");
     //register char device number(s)
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html
@@ -140,6 +138,10 @@ static int __init init_led(void){
     if(alloc_chrdev_region(&led_dev_number,0,1,DRV_NAME)<0)
         return -EIO;
     pr_info("Major Nr: %d\nMinor Nr: %d",led_dev_number>>20, led_dev_number && 0xffffff);
+    //TODO add io mem
+    if(request_mem_region(GPIO_17_ADDRESS,GPIO_17_SIZE,DRV_NAME)==NULL)
+        return -EBUSY;
+    GPIO_17 = *(u32*) ioremap( GPIO_17_ADDRESS, GPIO_17_SIZE );
     //allocate cdev struct
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html
     driver_object = cdev_alloc();
