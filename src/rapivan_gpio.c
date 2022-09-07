@@ -19,7 +19,7 @@
 #define LED_ON 0x1
 #define LED_OFF 0x0
 
-u32 GPIO_17 = 0;
+void* __iomem GPIO_17;
 
 static dev_t led_dev_number;
 static struct cdev* driver_object;
@@ -109,10 +109,10 @@ static ssize_t write_gpio(struct file* instance, const char __user* user_buffer,
 static int close_gpio(struct inode* device_file, struct file* instance) {
     pr_info("close_led(): drv close");
    // dev_info(led_dev,"%s","close_gpio() called\n");
-    if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
-        return 0;
-    }
-    atomic_dec(&access_count);
+    // if(instance->f_flags&O_RDWR || instance->f_flags&O_WRONLY){
+    //     return 0;
+    // }
+    // atomic_dec(&access_count);
     return 0;
 }
 
@@ -141,7 +141,7 @@ static int __init init_led(void){
     //TODO add io mem
     if(request_mem_region(GPIO_17_ADDRESS,GPIO_17_SIZE,DRV_NAME)==NULL)
         return -EBUSY;
-    GPIO_17 = *(u32*) ioremap( GPIO_17_ADDRESS, GPIO_17_SIZE );
+    GPIO_17 = ioremap( GPIO_17_ADDRESS, GPIO_17_SIZE );
     //allocate cdev struct
     //https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html
     driver_object = cdev_alloc();
