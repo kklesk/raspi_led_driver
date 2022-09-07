@@ -10,6 +10,6 @@ default:
 endif
 
 clean:
-	 rm ./*.o *.ko *mod.c *symvers *.order *.mod
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 
